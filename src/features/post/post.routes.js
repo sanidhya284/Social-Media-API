@@ -1,19 +1,45 @@
+//manage routes/paths to userController
+//import express
 import express from "express";
-import PostController from "./post.controller.js";
-import { uploads } from "../../middlewares/fileUpload.middleware.js";
+import { uploadB } from "../../middlewares/file-upload.middlware.js";
+import jwtAuth from "../../middlewares/jwt.middleware.js";
+import { PostController } from "./post.controller.js";
+import authenticateToken from "../../middlewares/checkBlacklistedToken.js";
 
+//get router initialize
+const postRouter = express.Router();
 const postController = new PostController();
-const router = express.Router();
 
-// Get all posts
-router.get('/all', postController.getAllPosts);
-// Get a specific post by ID
-router.get('/:id', postController.getPostById);
-// Create a new post (with media upload)
-router.post('/', uploads.single('media'), postController.createPost);
-// Update a post (with media upload)
-router.put('/:id', uploads.single('media'), postController.updatePost);
-// Delete a post
-router.delete('/:id', postController.deletePost);
+//all the path to controller methods
+postRouter.post(
+  "/",
+  authenticateToken,
+  jwtAuth,
+  uploadB.single("imageUrl"),
+  (req, res, next) => {
+    postController.addPost(req, res, next);
+  }
+);
+postRouter.get("/all", authenticateToken, jwtAuth, (req, res, next) => {
+  postController.getAllPosts(req, res, next);
+});
+postRouter.get("/", authenticateToken, jwtAuth, (req, res, next) => {
+  postController.getAll(req, res, next);
+});
+postRouter.get("/:postID", authenticateToken, jwtAuth, (req, res, next) => {
+  postController.getById(req, res, next);
+});
+postRouter.put(
+  "/:postID",
+  authenticateToken,
+  jwtAuth,
+  uploadB.single("imageUrl"),
+  (req, res, next) => {
+    postController.update(req, res, next);
+  }
+);
+postRouter.delete("/:postID", authenticateToken, jwtAuth, (req, res, next) => {
+  postController.delete(req, res, next);
+});
 
-export default router;
+export default postRouter;

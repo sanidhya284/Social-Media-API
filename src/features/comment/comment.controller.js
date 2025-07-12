@@ -1,38 +1,58 @@
+import { ApplicationError } from "../../error-handler/applicationError.js";
 import CommentModel from "./comment.model.js";
-export default class CommentController {
-    getCommentsByPostId(req, res) {
-        const postId = req.params.id;
-        const comments = CommentModel.getByPostId(postId);
-        res.status(200).send(comments);
+import CommentRepository from "./comment.repository.js";
+
+// creating class for handling req urls and response data
+export class CommentController {
+  constructor() {
+    this.commentRepository = new CommentRepository();
+  }
+  async add(req, res, next) {
+    try {
+      const userID = req.userID;
+      const postID = req.params.postID;
+      const comment = req.body.comment;
+      const commentModel = new CommentModel(userID, postID, comment);
+      console.log("the commentModel is");
+      console.log(commentModel);
+      const newComment = await this.commentRepository.add(commentModel);
+      res.status(201).send(newComment);
+    } catch (error) {
+      next(error);
     }
-    addComment(req, res) {
-        const postId = req.params.id;
-        const { content } = req.body;
-        const newComment = {
-            userId: req.user.id,
-            postId,
-            content,
-        };
-        const createdComment = CommentModel.add(newComment);
-        res.status(201).send(createdComment);
+  }
+  async get(req, res, next) {
+    try {
+      const postID = req.params.postID;
+      const comments = await this.commentRepository.get(postID);
+      res.status(201).send(comments);
+    } catch (error) {
+      next(error);
     }
-    updateComment(req, res) {
-        const commentId = req.params.id;
-        const { content } = req.body;
-        const updatedComment = CommentModel.update(commentId, { content });
-        if (!updatedComment) {
-            res.status(404).send("Comment not found");
-        } else {
-            res.status(200).send(updatedComment);
-        }
+  }
+
+  async update(req, res, next) {
+    try {
+      const id = req.params.id;
+      const comment = req.body.comment;
+      const updatedComment = await this.commentRepository.update(
+        req.userID,
+        id,
+        comment
+      );
+      res.status(201).send(updatedComment);
+    } catch (error) {
+      next(error);
     }
-    deleteComment(req, res) {
-        const commentId = req.params.id;
-        const deleted = CommentModel.delete(commentId);
-        if (!deleted) {
-            res.status(404).send("Comment not found");
-        } else {
-            res.status(200).send({ message: "Comment deleted successfully" });
-        }
+  }
+  async delete(req, res, next) {
+    try {
+      const id = req.params.id;
+      // const comment=req.body.comment;
+      await this.commentRepository.delete(req.userID, id);
+      res.status(201).send("Comment is deleted successfully");
+    } catch (error) {
+      next(error);
     }
+  }
 }
